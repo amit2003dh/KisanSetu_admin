@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create axios instance for admin API
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api", // Backend API URL
+  baseURL: "https://kisan-setu-backend-wxms.onrender.com/api", // Backend API URL
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
