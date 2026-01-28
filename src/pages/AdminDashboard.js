@@ -11,8 +11,12 @@ export default function AdminDashboard() {
     sellers: 0,
     deliveryPartners: 0,
     pendingVerifications: 0,
+    approvedVerifications: 0,
+    rejectedVerifications: 0,
     totalOrders: 0,
-    totalRevenue: 0
+    totalRevenue: 0,
+    totalCrops: 0,
+    totalProducts: 0
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -89,13 +93,13 @@ export default function AdminDashboard() {
             <span style={{ color: "var(--text-secondary)" }}>
               Welcome, Admin
             </span>
-            <button
+            {/* <button
               onClick={handleLogout}
-              className="btn btn-secondary"
+              className="btn btn-danger"
               style={{ fontSize: "14px", padding: "8px 16px" }}
             >
               🚪 Logout
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
@@ -208,6 +212,22 @@ export default function AdminDashboard() {
             </div>
             
             <div className="card" style={{ textAlign: "center", padding: "20px" }}>
+              <div style={{ fontSize: "32px", marginBottom: "8px" }}>✅</div>
+              <div style={{ fontSize: "24px", fontWeight: "bold", color: "#4caf50" }}>
+                {stats.approvedVerifications}
+              </div>
+              <div style={{ color: "var(--text-secondary)" }}>Approved Verifications</div>
+            </div>
+            
+            <div className="card" style={{ textAlign: "center", padding: "20px" }}>
+              <div style={{ fontSize: "32px", marginBottom: "8px" }}>❌</div>
+              <div style={{ fontSize: "24px", fontWeight: "bold", color: "#f44336" }}>
+                {stats.rejectedVerifications}
+              </div>
+              <div style={{ color: "var(--text-secondary)" }}>Rejected Verifications</div>
+            </div>
+            
+            <div className="card" style={{ textAlign: "center", padding: "20px" }}>
               <div style={{ fontSize: "32px", marginBottom: "8px" }}>📦</div>
               <div style={{ fontSize: "24px", fontWeight: "bold", color: "var(--primary-green)" }}>
                 {stats.totalOrders}
@@ -221,6 +241,22 @@ export default function AdminDashboard() {
                 ₹{stats.totalRevenue}
               </div>
               <div style={{ color: "var(--text-secondary)" }}>Total Revenue</div>
+            </div>
+            
+            <div className="card" style={{ textAlign: "center", padding: "20px" }}>
+              <div style={{ fontSize: "32px", marginBottom: "8px" }}>🌾</div>
+              <div style={{ fontSize: "24px", fontWeight: "bold", color: "var(--primary-orange)" }}>
+                {stats.totalCrops}
+              </div>
+              <div style={{ color: "var(--text-secondary)" }}>Total Crops</div>
+            </div>
+            
+            <div className="card" style={{ textAlign: "center", padding: "20px" }}>
+              <div style={{ fontSize: "32px", marginBottom: "8px" }}>📦</div>
+              <div style={{ fontSize: "24px", fontWeight: "bold", color: "var(--primary-purple)" }}>
+                {stats.totalProducts}
+              </div>
+              <div style={{ color: "var(--text-secondary)" }}>Total Products</div>
             </div>
           </div>
 

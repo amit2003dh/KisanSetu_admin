@@ -8,21 +8,41 @@ export default function Analytics() {
       totalUsers: 0,
       totalOrders: 0,
       totalRevenue: 0,
-      activeUsers: 0
+      activeUsers: 0,
+      totalCrops: 0,
+      totalProducts: 0
     },
     userGrowth: [],
     revenueData: [],
     topProducts: [],
+    topCrops: [],
     orderStats: {
-      pending: 0,
-      processing: 0,
-      completed: 0,
-      cancelled: 0
+      Pending: 0,
+      Confirmed: 0,
+      'Picked Up': 0,
+      'In Transit': 0,
+      Delivered: 0,
+      Cancelled: 0
+    },
+    usersByRole: {
+      farmer: 0,
+      buyer: 0,
+      seller: 0,
+      delivery_partner: 0
+    },
+    productionStats: {
+      approved: 0,
+      pending: 0
+    },
+    revenueBreakdown: {
+      byUserType: [],
+      byCategory: []
     }
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [timeRange, setTimeRange] = useState("30days"); // 7days, 30days, 90days
+  const [userType, setUserType] = useState("all"); // all, farmer, buyer, seller, delivery_partner
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,48 +54,16 @@ export default function Analytics() {
     }
 
     fetchAnalytics();
-  }, [navigate, timeRange]);
+  }, [navigate, timeRange, userType]);
 
   const fetchAnalytics = async () => {
     try {
-      // Mock analytics data - replace with actual API calls
-      const mockAnalytics = {
-        overview: {
-          totalUsers: 150,
-          totalOrders: 500,
-          totalRevenue: 2500000,
-          activeUsers: 85
-        },
-        userGrowth: [
-          { date: '2024-01-01', users: 120 },
-          { date: '2024-01-07', users: 125 },
-          { date: '2024-01-14', users: 130 },
-          { date: '2024-01-21', users: 135 },
-          { date: '2024-01-28', users: 140 },
-          { date: '2024-02-04', users: 145 },
-          { date: '2024-02-11', users: 150 }
-        ],
-        revenueData: [
-          { month: 'Jan', revenue: 800000 },
-          { month: 'Feb', revenue: 900000 },
-          { month: 'Mar', revenue: 800000 }
-        ],
-        topProducts: [
-          { name: 'Wheat', orders: 150, revenue: 450000 },
-          { name: 'Rice', orders: 120, revenue: 360000 },
-          { name: 'Tomatoes', orders: 80, revenue: 240000 },
-          { name: 'Potatoes', orders: 60, revenue: 180000 },
-          { name: 'Onions', orders: 40, revenue: 120000 }
-        ],
-        orderStats: {
-          pending: 25,
-          processing: 50,
-          completed: 400,
-          cancelled: 25
-        }
-      };
-
-      setAnalytics(mockAnalytics);
+      const { data } = await apiCall(() => 
+        API.get(`/admin/analytics?timeRange=${timeRange}&userType=${userType}`)
+      );
+      if (data) {
+        setAnalytics(data);
+      }
     } catch (error) {
       console.error("Error fetching analytics:", error);
       setError("Failed to fetch analytics data");
@@ -112,6 +100,22 @@ export default function Analytics() {
           </div>
           
           <div style={{ display: "flex", gap: "8px" }}>
+            <select
+              value={userType}
+              onChange={(e) => setUserType(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                border: "1px solid var(--border-color)",
+                borderRadius: "4px",
+                fontSize: "14px"
+              }}
+            >
+              <option value="all">All Users</option>
+              <option value="farmer">Farmers</option>
+              <option value="buyer">Buyers</option>
+              <option value="seller">Sellers</option>
+              <option value="delivery_partner">Delivery Partners</option>
+            </select>
             <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
@@ -170,6 +174,22 @@ export default function Analytics() {
           </div>
           <div style={{ color: "var(--text-secondary)" }}>Active Users</div>
         </div>
+        
+        <div className="card" style={{ textAlign: "center", padding: "24px" }}>
+          <div style={{ fontSize: "32px", marginBottom: "8px" }}>🌾</div>
+          <div style={{ fontSize: "24px", fontWeight: "bold", color: "var(--primary-teal)" }}>
+            {analytics.overview.totalCrops}
+          </div>
+          <div style={{ color: "var(--text-secondary)" }}>Total Crops</div>
+        </div>
+        
+        <div className="card" style={{ textAlign: "center", padding: "24px" }}>
+          <div style={{ fontSize: "32px", marginBottom: "8px" }}>🛍️</div>
+          <div style={{ fontSize: "24px", fontWeight: "bold", color: "var(--primary-pink)" }}>
+            {analytics.overview.totalProducts}
+          </div>
+          <div style={{ color: "var(--text-secondary)" }}>Total Products</div>
+        </div>
       </div>
 
       {/* Charts Section */}
@@ -204,31 +224,101 @@ export default function Analytics() {
       </div>
 
       {/* Detailed Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "32px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "24px", marginBottom: "32px" }}>
         {/* Order Status Breakdown */}
         <div className="card">
-          <h3 style={{ marginBottom: "16px" }}>📦 Order Status Breakdown</h3>
+          <h3 style={{ marginBottom: "16px" }}>📦 Order Status</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>⏳ Pending</span>
-              <span style={{ fontWeight: "bold", color: "#ff9800" }}>{analytics.orderStats.pending}</span>
+              <span style={{ fontWeight: "bold", color: "#ff9800" }}>{analytics.orderStats.Pending}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span>⚙️ Processing</span>
-              <span style={{ fontWeight: "bold", color: "#2196f3" }}>{analytics.orderStats.processing}</span>
+              <span>✅ Confirmed</span>
+              <span style={{ fontWeight: "bold", color: "#2196f3" }}>{analytics.orderStats.Confirmed}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span>✅ Completed</span>
-              <span style={{ fontWeight: "bold", color: "#4caf50" }}>{analytics.orderStats.completed}</span>
+              <span>🚚 Picked Up</span>
+              <span style={{ fontWeight: "bold", color: "#9c27b0" }}>{analytics.orderStats['Picked Up']}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>📦 In Transit</span>
+              <span style={{ fontWeight: "bold", color: "#3f51b5" }}>{analytics.orderStats['In Transit']}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>✅ Delivered</span>
+              <span style={{ fontWeight: "bold", color: "#4caf50" }}>{analytics.orderStats.Delivered}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>❌ Cancelled</span>
-              <span style={{ fontWeight: "bold", color: "#f44336" }}>{analytics.orderStats.cancelled}</span>
+              <span style={{ fontWeight: "bold", color: "#f44336" }}>{analytics.orderStats.Cancelled}</span>
             </div>
           </div>
         </div>
 
+        {/* Revenue by User Type */}
+        <div className="card">
+          <h3 style={{ marginBottom: "16px" }}>💰 Revenue by User Type</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {analytics.revenueBreakdown.byUserType.length > 0 ? (
+              analytics.revenueBreakdown.byUserType.map((userType) => (
+                <div key={userType._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span>
+                    {userType._id === 'farmer' ? '👨‍🌾 Farmers' :
+                     userType._id === 'buyer' ? '🛒 Buyers' :
+                     userType._id === 'seller' ? '🏪 Sellers' :
+                     userType._id === 'delivery_partner' ? '🚚 Delivery Partners' : userType._id}
+                  </span>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontWeight: "bold", color: "var(--primary-green)" }}>
+                      ₹{(userType.revenue / 100000).toFixed(1)}L
+                    </div>
+                    <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                      {userType.orders} orders
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ textAlign: "center", color: "var(--text-secondary)" }}>
+                No revenue data available
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Revenue by Category */}
+        <div className="card">
+          <h3 style={{ marginBottom: "16px" }}>📊 Revenue by Category</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {analytics.revenueBreakdown.byCategory.length > 0 ? (
+              analytics.revenueBreakdown.byCategory.map((category) => (
+                <div key={category._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span>
+                    {category._id === 'crop' ? '🌾 Crops' :
+                     category._id === 'product' ? '🛍️ Products' : '❓ Unknown'}
+                  </span>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontWeight: "bold", color: "var(--primary-orange)" }}>
+                      ₹{(category.revenue / 100000).toFixed(1)}L
+                    </div>
+                    <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                      {category.quantity} units • {category.orderCount} orders
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ textAlign: "center", color: "var(--text-secondary)" }}>
+                No revenue data available
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
         {/* Top Products */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "32px" }}>
         <div className="card">
           <h3 style={{ marginBottom: "16px" }}>🏆 Top Products</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -237,15 +327,33 @@ export default function Analytics() {
                 <div>
                   <div style={{ fontWeight: "600" }}>{product.name}</div>
                   <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-                    {product.orders} orders
+                    {product.totalSold} sold
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontWeight: "bold", color: "var(--primary-green)" }}>
                     ₹{(product.revenue / 1000).toFixed(0)}K
                   </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="card">
+          <h3 style={{ marginBottom: "16px" }}>🌾 Top Crops</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {analytics.topCrops.map((crop, index) => (
+              <div key={index} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px", background: "var(--background-alt)", borderRadius: "4px" }}>
+                <div>
+                  <div style={{ fontWeight: "600" }}>{crop.name}</div>
                   <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-                    Revenue
+                    {crop.totalSold} sold
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontWeight: "bold", color: "var(--primary-orange)" }}>
+                    ₹{(crop.revenue / 1000).toFixed(0)}K
                   </div>
                 </div>
               </div>

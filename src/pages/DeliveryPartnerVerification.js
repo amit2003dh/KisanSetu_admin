@@ -28,6 +28,7 @@ export default function DeliveryPartnerVerification() {
         API.get(`/admin/delivery-partners?status=${filter}`)
       );
       if (data) {
+        console.log('Frontend received partners data:', data.partners[0]); // Debug log
         setPartners(data.partners || []);
       }
     } catch (error) {
@@ -40,6 +41,9 @@ export default function DeliveryPartnerVerification() {
 
   const handleVerify = async (partnerId, action) => {
     try {
+      // Debug: Log the partnerId to see what's being sent
+      console.log('Attempting to verify delivery partner:', { partnerId, action });
+      
       const { data, error } = await apiCall(() =>
         API.put(`/admin/delivery-partners/${partnerId}/verify`, { action })
       );
@@ -56,8 +60,26 @@ export default function DeliveryPartnerVerification() {
     }
   };
 
-  const viewPartnerDetails = (partner) => {
-    setSelectedPartner(partner);
+  const viewPartnerDetails = async (partner) => {
+    try {
+      // Fetch detailed delivery partner data
+      const { data, error } = await apiCall(() =>
+        API.get(`/admin/delivery-partners/${partner._id}/details`)
+      );
+
+      if (error) {
+        setError(error);
+      } else {
+        // Combine basic partner info with detailed info
+        setSelectedPartner({
+          ...partner,
+          ...data.partner
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching partner details:", error);
+      setError("Failed to fetch delivery partner details");
+    }
   };
 
   if (loading) {
@@ -96,9 +118,9 @@ export default function DeliveryPartnerVerification() {
       <div style={{ marginBottom: "24px" }}>
         <div style={{ display: "flex", gap: "8px" }}>
           {[
-            { id: "pending", label: "⏳ Pending", count: partners.filter(p => p.status === "pending").length },
-            { id: "approved", label: "✅ Approved", count: partners.filter(p => p.status === "approved").length },
-            { id: "rejected", label: "❌ Rejected", count: partners.filter(p => p.status === "rejected").length }
+            { id: "pending", label: "⏳ Pending", count: partners.filter(p => p.isApproved === 'pending').length },
+            { id: "approved", label: "✅ Approved", count: partners.filter(p => p.isApproved === 'approved').length },
+            { id: "rejected", label: "❌ Rejected", count: partners.filter(p => p.isApproved === 'rejected').length }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -164,60 +186,50 @@ export default function DeliveryPartnerVerification() {
                 <p>Name: {selectedPartner.name}</p>
                 <p>Email: {selectedPartner.email}</p>
                 <p>Phone: {selectedPartner.phone}</p>
-                <p>Address: {selectedPartner.address}</p>
+                <p>Address: {selectedPartner.address || 'Not provided'}</p>
               </div>
 
               <div>
                 <strong>Vehicle Information:</strong>
-                <p>Type: {selectedPartner.vehicle?.type}</p>
-                <p>Number: {selectedPartner.vehicle?.number}</p>
-                <p>Capacity: {selectedPartner.vehicle?.capacity}kg</p>
+                <p>Type: {selectedPartner.vehicle?.type || 'Not provided'}</p>
+                <p>Number: {selectedPartner.vehicle?.number || 'Not provided'}</p>
+                <p>Capacity: {selectedPartner.vehicle?.capacity || 0}kg</p>
               </div>
 
               <div>
                 <strong>Service Area:</strong>
                 <p>Max Distance: {selectedPartner.serviceArea?.maxDistance || 50}km</p>
-                {selectedPartner.serviceArea?.cities && (
+                {selectedPartner.serviceArea?.cities && selectedPartner.serviceArea.cities.length > 0 ? (
                   <p>Cities: {selectedPartner.serviceArea.cities.join(", ")}</p>
+                ) : (
+                  <p>Cities: Not specified</p>
                 )}
               </div>
 
               <div>
                 <strong>Documents:</strong>
-                {selectedPartner.documents && (
+                {selectedPartner.documents?.drivingLicense ? (
                   <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-                    {selectedPartner.documents.drivingLicense && (
-                      <a href={selectedPartner.documents.drivingLicense} target="_blank" rel="noopener noreferrer">
-                        <button className="btn btn-secondary" style={{ fontSize: "12px" }}>
-                          📄 Driving License
-                        </button>
-                      </a>
-                    )}
-                    {selectedPartner.documents.vehicleRC && (
-                      <a href={selectedPartner.documents.vehicleRC} target="_blank" rel="noopener noreferrer">
-                        <button className="btn btn-secondary" style={{ fontSize: "12px" }}>
-                          📄 Vehicle RC
-                        </button>
-                      </a>
-                    )}
-                    {selectedPartner.documents.aadharCard && (
-                      <a href={selectedPartner.documents.aadharCard} target="_blank" rel="noopener noreferrer">
-                        <button className="btn btn-secondary" style={{ fontSize: "12px" }}>
-                          📄 Aadhar Card
-                        </button>
-                      </a>
-                    )}
+                    <a href={selectedPartner.documents.drivingLicense} target="_blank" rel="noopener noreferrer">
+                      <button className="btn btn-secondary" style={{ fontSize: "12px" }}>
+                        📄 Driving License
+                      </button>
+                    </a>
                   </div>
+                ) : (
+                  <p style={{ color: "var(--text-secondary)" }}>No documents uploaded</p>
                 )}
               </div>
 
               <div>
                 <strong>Bank Details:</strong>
-                <p>Account Number: ****{selectedPartner.bankDetails?.accountNumber?.slice(-4)}</p>
-                <p>IFSC: {selectedPartner.bankDetails?.ifsc}</p>
+                <p>Account Number: {selectedPartner.bankDetails?.accountNumber ? 
+                  `****${selectedPartner.bankDetails.accountNumber.slice(-4)}` : 'Not provided'}</p>
+                <p>IFSC: {selectedPartner.bankDetails?.ifscCode || 'Not provided'}</p>
+                <p>Account Holder: {selectedPartner.bankDetails?.accountHolderName || 'Not provided'}</p>
               </div>
 
-              {selectedPartner.status === "pending" && (
+              {selectedPartner.isApproved === 'pending' && (
                 <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
                   <button
                     onClick={() => handleVerify(selectedPartner._id, "reject")}
@@ -269,11 +281,14 @@ export default function DeliveryPartnerVerification() {
                         padding: "4px 8px",
                         borderRadius: "12px",
                         fontSize: "12px",
-                        background: partner.status === "approved" ? "#4caf50" : 
-                                   partner.status === "rejected" ? "#f44336" : "#ff9800",
+                        background: partner.isApproved === 'approved' ? "#4caf50" : 
+                                   partner.isApproved === 'rejected' ? "#f44336" : 
+                                   partner.isApproved === 'not_applied' ? "#9e9e9e" : "#ff9800",
                         color: "white"
                       }}>
-                        {partner.status}
+                        {partner.isApproved === 'approved' ? '✅ Approved' : 
+                         partner.isApproved === 'rejected' ? '❌ Rejected' : 
+                         partner.isApproved === 'not_applied' ? '📝 Not Applied' : '⏳ Pending'}
                       </span>
                     </div>
                     
@@ -286,15 +301,7 @@ export default function DeliveryPartnerVerification() {
                     </p>
                     
                     <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
-                      <strong>Vehicle:</strong> {partner.vehicle?.type} ({partner.vehicle?.capacity}kg)
-                    </p>
-                    
-                    <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
-                      <strong>Service Area:</strong> {partner.serviceArea?.maxDistance || 50}km
-                    </p>
-                    
-                    <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
-                      <strong>Applied:</strong> {new Date(partner.createdAt).toLocaleString()}
+                      <strong>Applied:</strong> {new Date(partner.applicationDate || partner.createdAt).toLocaleString()}
                     </p>
                   </div>
                   
@@ -306,7 +313,7 @@ export default function DeliveryPartnerVerification() {
                     >
                       👁️ View Details
                     </button>
-                    {partner.status === "pending" && (
+                    {partner.isApproved === 'pending' && (
                       <>
                         <button
                           onClick={() => handleVerify(partner._id, "approve")}

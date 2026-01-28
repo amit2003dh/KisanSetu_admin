@@ -24,47 +24,12 @@ export default function OrderManagement() {
 
   const fetchOrders = async () => {
     try {
-      // Mock data for now - replace with actual API call
-      const mockOrders = [
-        {
-          _id: '1',
-          orderId: 'ORD-2024-001',
-          buyerId: { name: 'John Buyer', email: 'john@example.com' },
-          sellerId: { name: 'Jane Seller', email: 'jane@example.com' },
-          items: [
-            { name: 'Wheat', quantity: 100, price: 2000 },
-            { name: 'Rice', quantity: 50, price: 1500 }
-          ],
-          totalAmount: 3500,
-          status: 'pending',
-          deliveryAddress: '123 Main St, Delhi',
-          orderDate: new Date('2024-01-15'),
-          deliveryDate: new Date('2024-01-20'),
-          paymentStatus: 'pending'
-        },
-        {
-          _id: '2',
-          orderId: 'ORD-2024-002',
-          buyerId: { name: 'Alice Buyer', email: 'alice@example.com' },
-          sellerId: { name: 'Bob Seller', email: 'bob@example.com' },
-          items: [
-            { name: 'Tomatoes', quantity: 200, price: 1000 }
-          ],
-          totalAmount: 1000,
-          status: 'processing',
-          deliveryAddress: '456 Park Ave, Mumbai',
-          orderDate: new Date('2024-01-16'),
-          deliveryDate: new Date('2024-01-22'),
-          paymentStatus: 'paid'
-        }
-      ];
-
-      // Filter by status if provided
-      const filteredOrders = filter && filter !== 'all' ? 
-        mockOrders.filter(o => o.status === filter) : 
-        mockOrders;
-
-      setOrders(filteredOrders);
+      const { data } = await apiCall(() => 
+        API.get(`/admin/orders?status=${filter}`)
+      );
+      if (data) {
+        setOrders(data.orders || []);
+      }
     } catch (error) {
       console.error("Error fetching orders:", error);
       setError("Failed to fetch orders");
@@ -90,10 +55,12 @@ export default function OrderManagement() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "pending": return "#ff9800";
-      case "processing": return "#2196f3";
-      case "completed": return "#4caf50";
-      case "cancelled": return "#f44336";
+      case "Pending": return "#ff9800";
+      case "Confirmed": return "#2196f3";
+      case "Picked Up": return "#9c27b0";
+      case "In Transit": return "#3f51b5";
+      case "Delivered": return "#4caf50";
+      case "Cancelled": return "#f44336";
       default: return "#9e9e9e";
     }
   };
@@ -135,10 +102,12 @@ export default function OrderManagement() {
         <div style={{ display: "flex", gap: "8px" }}>
           {[
             { id: "all", label: "📦 All Orders", count: orders.length },
-            { id: "pending", label: "⏳ Pending", count: orders.filter(o => o.status === "pending").length },
-            { id: "processing", label: "⚙️ Processing", count: orders.filter(o => o.status === "processing").length },
-            { id: "completed", label: "✅ Completed", count: orders.filter(o => o.status === "completed").length },
-            { id: "cancelled", label: "❌ Cancelled", count: orders.filter(o => o.status === "cancelled").length }
+            { id: "Pending", label: "⏳ Pending", count: orders.filter(o => o.status === "Pending").length },
+            { id: "Confirmed", label: "✅ Confirmed", count: orders.filter(o => o.status === "Confirmed").length },
+            { id: "Picked Up", label: "🚚 Picked Up", count: orders.filter(o => o.status === "Picked Up").length },
+            { id: "In Transit", label: "📦 In Transit", count: orders.filter(o => o.status === "In Transit").length },
+            { id: "Delivered", label: "✅ Delivered", count: orders.filter(o => o.status === "Delivered").length },
+            { id: "Cancelled", label: "❌ Cancelled", count: orders.filter(o => o.status === "Cancelled").length }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -201,18 +170,16 @@ export default function OrderManagement() {
             <div style={{ display: "grid", gap: "16px" }}>
               <div>
                 <strong>Order Information:</strong>
-                <p>Order ID: {selectedOrder.orderId}</p>
+                <p>Order ID: {selectedOrder._id}</p>
                 <p>Status: <span style={{ color: getStatusColor(selectedOrder.status) }}>{selectedOrder.status}</span></p>
-                <p>Total Amount: ₹{selectedOrder.totalAmount}</p>
-                <p>Order Date: {new Date(selectedOrder.orderDate).toLocaleDateString()}</p>
-                <p>Delivery Date: {new Date(selectedOrder.deliveryDate).toLocaleDateString()}</p>
+                <p>Total Amount: ₹{selectedOrder.total}</p>
+                <p>Order Date: {new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
               </div>
 
               <div>
                 <strong>Customer Information:</strong>
                 <p>Name: {selectedOrder.buyerId?.name}</p>
                 <p>Email: {selectedOrder.buyerId?.email}</p>
-                <p>Delivery Address: {selectedOrder.deliveryAddress}</p>
               </div>
 
               <div>
@@ -222,10 +189,10 @@ export default function OrderManagement() {
               </div>
 
               <div>
-                <strong>Items:</strong>
-                {selectedOrder.items?.map((item, index) => (
-                  <div key={index} style={{ marginBottom: "8px", padding: "8px", background: "var(--background-alt)", borderRadius: "4px" }}>
-                    <p>{item.name} - {item.quantity} units @ ₹{item.price}</p>
+                <strong>Order Items:</strong>
+                {selectedOrder.items && selectedOrder.items.map((item, index) => (
+                  <div key={index} style={{ marginLeft: "16px", marginTop: "4px" }}>
+                    <p style={{ margin: "0" }}>{item.name} - {item.quantity} x ₹{item.price} = ₹{item.quantity * item.price}</p>
                   </div>
                 ))}
               </div>
@@ -315,11 +282,11 @@ export default function OrderManagement() {
                     </p>
                     
                     <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
-                      <strong>Total:</strong> ₹{order.totalAmount}
+                      <strong>Total:</strong> ₹{order.total}
                     </p>
                     
                     <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
-                      <strong>Order Date:</strong> {new Date(order.orderDate).toLocaleDateString()}
+                      <strong>Order Date:</strong> {new Date(order.createdAt).toLocaleDateString()}
                     </p>
                     
                     <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
