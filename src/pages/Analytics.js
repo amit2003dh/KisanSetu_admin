@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import API, { apiCall } from "../api/api";
 
@@ -45,18 +45,7 @@ export default function Analytics() {
   const [userType, setUserType] = useState("all"); // all, farmer, buyer, seller, delivery_partner
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Check if admin is logged in
-    const adminToken = localStorage.getItem("adminToken");
-    if (!adminToken) {
-      navigate("/admin/login");
-      return;
-    }
-
-    fetchAnalytics();
-  }, [navigate, timeRange, userType]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       const { data } = await apiCall(() => 
         API.get(`/admin/analytics?timeRange=${timeRange}&userType=${userType}`)
@@ -70,7 +59,18 @@ export default function Analytics() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [timeRange, userType]);
+
+  useEffect(() => {
+    // Check if admin is logged in
+    const adminToken = localStorage.getItem("adminToken");
+    if (!adminToken) {
+      navigate("/admin/login");
+      return;
+    }
+
+    fetchAnalytics();
+  }, [navigate, timeRange, userType, fetchAnalytics]);
 
   if (loading) {
     return (

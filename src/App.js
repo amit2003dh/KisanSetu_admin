@@ -1,5 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import AdminLogin from "./pages/AdminLogin";
 import AdminSignup from "./pages/AdminSignup";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -11,22 +10,17 @@ import Analytics from "./pages/Analytics";
 import AdminNavbar from "./components/AdminNavbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-function App() {
-  const [showNavbar, setShowNavbar] = useState(true);
-
-  useEffect(() => {
-    // Hide navbar on login and signup pages
-    const currentPath = window.location.pathname;
-    if (currentPath === "/admin/login" || currentPath === "/admin/signup") {
-      setShowNavbar(false);
-    } else {
-      setShowNavbar(true);
-    }
-  }, []);
+function AppContent() {
+  const location = useLocation();
+  
+  // Check if current page should show navbar
+  const shouldShowNavbar = location.pathname !== "/admin/login" && 
+                         location.pathname !== "/admin/signup" &&
+                         location.pathname !== "/";
 
   return (
-    <BrowserRouter>
-      {showNavbar && <AdminNavbar />}
+    <>
+      {shouldShowNavbar && <AdminNavbar />}
       <Routes>
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/signup" element={<AdminSignup />} />
@@ -43,6 +37,14 @@ function App() {
         {/* Catch all route - redirect to admin login */}
         <Route path="*" element={<AdminLogin />} />
       </Routes>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
     </BrowserRouter>
   );
 }

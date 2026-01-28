@@ -64,12 +64,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminData");
-    navigate("/admin/login");
-  };
-
   if (loading) {
     return (
       <div className="container" style={{ paddingTop: "40px", paddingBottom: "40px" }}>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import API, { apiCall } from "../api/api";
 
@@ -14,18 +14,7 @@ export default function ProductionVerification() {
   const [selectedProduction, setSelectedProduction] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Check if admin is logged in
-    const adminToken = localStorage.getItem("adminToken");
-    if (!adminToken) {
-      navigate("/admin/login");
-      return;
-    }
-
-    fetchProductions();
-  }, [navigate, filter, categoryFilter]);
-
-  const fetchProductions = async () => {
+  const fetchProductions = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (filter && filter !== 'all') params.append('status', filter);
@@ -56,7 +45,18 @@ export default function ProductionVerification() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, categoryFilter]);
+
+  useEffect(() => {
+    // Check if admin is logged in
+    const adminToken = localStorage.getItem("adminToken");
+    if (!adminToken) {
+      navigate("/admin/login");
+      return;
+    }
+
+    fetchProductions();
+  }, [navigate, fetchProductions]);
 
   const viewDetails = (production) => {
     setSelectedProduction(production);
