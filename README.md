@@ -41,6 +41,11 @@ A separate React application for KisanSetu administration, providing complete co
 - **Dispute Resolution**: Handle order disputes and issues
 - **Revenue Tracking**: Monitor platform revenue
 
+
+"https://kisan-setu-admin-git-main-amit2003dhs-projects.vercel.app"
+"https://kisan-setu-admin.vercel.app"
+"https://kisan-setu-admin-eg3qlmw20-amit2003dhs-projects.vercel.app"
+
 ## 🛠️ Installation & Setup
 
 ### Prerequisites
