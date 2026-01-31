@@ -12,7 +12,34 @@ export default function ProductionVerification() {
   const [filter, setFilter] = useState("all"); // all, pending, approved, rejected
   const [categoryFilter, setCategoryFilter] = useState("all"); // all, crops, products
   const [selectedProduction, setSelectedProduction] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(false);
   const navigate = useNavigate();
+
+  // Mobile and orientation detection
+  useEffect(() => {
+    const checkMobile = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+    };
+
+    const checkOrientation = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      setIsPortrait(height > width);
+    };
+
+    checkMobile();
+    checkOrientation();
+    
+    const handleResize = () => {
+      checkMobile();
+      checkOrientation();
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const fetchProductions = useCallback(async () => {
     try {
@@ -197,22 +224,39 @@ export default function ProductionVerification() {
               <div key={production._id} style={{
                 border: "1px solid var(--border-color)",
                 borderRadius: "8px",
-                padding: "16px",
+                padding: isMobile ? "12px" : "16px",
                 background: "var(--background)"
               }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div style={{ 
+                  display: "flex", 
+                  flexDirection: isMobile ? "column" : "row",
+                  justifyContent: "space-between", 
+                  alignItems: isMobile ? "stretch" : "flex-start",
+                  gap: isMobile ? "12px" : "0"
+                }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                    <div style={{ 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: "8px", 
+                      marginBottom: "8px",
+                      flexWrap: isMobile ? "wrap" : "nowrap"
+                    }}>
                       <span style={{
                         padding: "4px 8px",
                         borderRadius: "12px",
                         fontSize: "12px",
                         background: production.type === 'crop' ? "#4caf50" : "#2196f3",
-                        color: "white"
+                        color: "white",
+                        flexShrink: 0
                       }}>
                         {production.type === 'crop' ? '🌾 Crop' : '📦 Product'}
                       </span>
-                      <h4 style={{ margin: "0" }}>
+                      <h4 style={{ 
+                        margin: "0",
+                        fontSize: isMobile ? "14px" : "16px",
+                        lineHeight: "1.3"
+                      }}>
                         {production.name} - {production.quantity}{production.type === 'crop' ? 'kg' : ' units'}
                       </h4>
                       <span style={{
@@ -221,59 +265,73 @@ export default function ProductionVerification() {
                         fontSize: "12px",
                         background: production.isApproved === 'approved' ? "#4caf50" : 
                                    production.isApproved === 'rejected' ? "#f44336" : "#ff9800",
-                        color: "white"
+                        color: "white",
+                        flexShrink: 0
                       }}>
                         {production.isApproved === 'approved' ? "✅ Approved" : 
                          production.isApproved === 'rejected' ? "❌ Rejected" : "⏳ Pending"}
                       </span>
                     </div>
                     
-                    <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
-                      <strong>Seller:</strong> {production.seller?.name}
-                    </p>
-                    
-                    <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
-                      <strong>Price:</strong> ₹{production.price}
-                    </p>
-                    
-                    {production.type === 'crop' && production.harvestDate && (
+                    <div style={{ fontSize: isMobile ? "13px" : "14px" }}>
                       <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
-                        <strong>Harvest Date:</strong> {new Date(production.harvestDate).toLocaleDateString()}
+                        <strong>Seller:</strong> {production.seller?.name}
                       </p>
-                    )}
-                    
-                    {production.type === 'product' && production.stock !== undefined && (
+                      
                       <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
-                        <strong>Stock:</strong> {production.stock} units
+                        <strong>Price:</strong> ₹{production.price}
                       </p>
-                    )}
-                    
-                    <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
-                      <strong>Category:</strong> {production.category || 'N/A'}
-                    </p>
-                    
-                    {production.description && (
+                      
+                      {production.type === 'crop' && production.harvestDate && (
+                        <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
+                          <strong>Harvest Date:</strong> {new Date(production.harvestDate).toLocaleDateString()}
+                        </p>
+                      )}
+                      
+                      {production.type === 'product' && production.stock !== undefined && (
+                        <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
+                          <strong>Stock:</strong> {production.stock} units
+                        </p>
+                      )}
+                      
                       <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
-                        <strong>Description:</strong> {production.description}
+                        <strong>Category:</strong> {production.category || 'N/A'}
                       </p>
-                    )}
-                    
-                    {production.location && (
-                      <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
-                        <strong>Location:</strong> {production.location.address || production.location}
+                      
+                      {production.description && (
+                        <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
+                          <strong>Description:</strong> {production.description}
+                        </p>
+                      )}
+                      
+                      {production.location && (
+                        <p style={{ margin: "0 0 4px 0", color: "var(--text-secondary)" }}>
+                          <strong>Location:</strong> {production.location.address || production.location}
+                        </p>
+                      )}
+                      
+                      <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
+                        Submitted: {new Date(production.createdAt).toLocaleString()}
                       </p>
-                    )}
-                    
-                    <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
-                      Submitted: {new Date(production.createdAt).toLocaleString()}
-                    </p>
+                    </div>
                   </div>
                   
-                  <div style={{ display: "flex", gap: "8px" }}>
+                  <div style={{ 
+                    display: "flex", 
+                    gap: "8px",
+                    flexDirection: isMobile ? "column" : "row",
+                    alignItems: isMobile ? "stretch" : "center",
+                    minWidth: isMobile ? "auto" : "fit-content"
+                  }}>
                     <button
                       onClick={() => viewDetails(production)}
                       className="btn btn-secondary"
-                      style={{ fontSize: "12px", padding: "6px 12px" }}
+                      style={{ 
+                        fontSize: isMobile ? "14px" : "12px", 
+                        padding: isMobile ? "10px 16px" : "6px 12px",
+                        width: isMobile ? "100%" : "auto",
+                        minHeight: isMobile ? "44px" : "auto"
+                      }}
                     >
                       👁️ View Details
                     </button>
@@ -282,14 +340,24 @@ export default function ProductionVerification() {
                         <button
                           onClick={() => handleVerify(production._id, "approve")}
                           className="btn btn-primary"
-                          style={{ fontSize: "12px", padding: "6px 12px" }}
+                          style={{ 
+                            fontSize: isMobile ? "14px" : "12px", 
+                            padding: isMobile ? "10px 16px" : "6px 12px",
+                            width: isMobile ? "100%" : "auto",
+                            minHeight: isMobile ? "44px" : "auto"
+                          }}
                         >
                           ✅ Approve
                         </button>
                         <button
                           onClick={() => handleVerify(production._id, "reject")}
                           className="btn btn-danger"
-                          style={{ fontSize: "12px", padding: "6px 12px" }}
+                          style={{ 
+                            fontSize: isMobile ? "14px" : "12px", 
+                            padding: isMobile ? "10px 16px" : "6px 12px",
+                            width: isMobile ? "100%" : "auto",
+                            minHeight: isMobile ? "44px" : "auto"
+                          }}
                         >
                           ❌ Reject
                         </button>

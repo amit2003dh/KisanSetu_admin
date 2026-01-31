@@ -9,7 +9,34 @@ export default function OrderManagement() {
   const [success, setSuccess] = useState("");
   const [filter, setFilter] = useState("all"); // all, pending, processing, completed, cancelled
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(false);
   const navigate = useNavigate();
+
+  // Mobile and orientation detection
+  useEffect(() => {
+    const checkMobile = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+    };
+
+    const checkOrientation = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      setIsPortrait(height > width);
+    };
+
+    checkMobile();
+    checkOrientation();
+    
+    const handleResize = () => {
+      checkMobile();
+      checkOrientation();
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     // Check if admin is logged in
@@ -98,31 +125,46 @@ export default function OrderManagement() {
       {success && <div className="success-message" style={{ marginBottom: "16px" }}>{success}</div>}
 
       {/* Filter Tabs */}
-      <div style={{ marginBottom: "24px" }}>
-        <div style={{ display: "flex", gap: "8px" }}>
+      <div className="filter-tabs" style={{ 
+        marginBottom: "24px",
+        overflowX: isMobile ? "auto" : "visible",
+        WebkitOverflowScrolling: isMobile ? "touch" : "auto"
+      }}>
+        <div className="filter-container" style={{ 
+          display: "flex", 
+          gap: isMobile ? "6px" : "8px",
+          flexDirection: isMobile ? "row" : "row",
+          minWidth: isMobile ? "max-content" : "auto",
+          paddingBottom: isMobile ? "8px" : "0"
+        }}>
           {[
-            { id: "all", label: "📦 All Orders", count: orders.length },
+            { id: "all", label: "📦 All", count: orders.length },
             { id: "Pending", label: "⏳ Pending", count: orders.filter(o => o.status === "Pending").length },
             { id: "Confirmed", label: "✅ Confirmed", count: orders.filter(o => o.status === "Confirmed").length },
-            { id: "Picked Up", label: "🚚 Picked Up", count: orders.filter(o => o.status === "Picked Up").length },
-            { id: "In Transit", label: "📦 In Transit", count: orders.filter(o => o.status === "In Transit").length },
+            { id: "Picked Up", label: "🚚 Picked", count: orders.filter(o => o.status === "Picked Up").length },
+            { id: "In Transit", label: "📦 Transit", count: orders.filter(o => o.status === "In Transit").length },
             { id: "Delivered", label: "✅ Delivered", count: orders.filter(o => o.status === "Delivered").length },
             { id: "Cancelled", label: "❌ Cancelled", count: orders.filter(o => o.status === "Cancelled").length }
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setFilter(tab.id)}
+              className={`filter-button ${filter === tab.id ? 'active' : ''}`}
               style={{
-                padding: "8px 16px",
+                padding: isMobile ? "8px 12px" : "8px 16px",
                 border: "1px solid var(--border-color)",
                 background: filter === tab.id ? "var(--primary-blue)" : "transparent",
                 color: filter === tab.id ? "white" : "var(--text-secondary)",
                 borderRadius: "4px",
                 cursor: "pointer",
-                fontSize: "14px"
+                fontSize: isMobile ? "12px" : "14px",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+                minWidth: isMobile ? "auto" : "fit-content",
+                minHeight: isMobile ? "40px" : "auto"
               }}
             >
-              {tab.label} ({tab.count})
+              {isMobile ? tab.label.split(' ')[0] + ' ' + tab.label.split(' ')[1] : tab.label} ({tab.count})
             </button>
           ))}
         </div>
